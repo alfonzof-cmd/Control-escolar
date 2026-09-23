@@ -1,263 +1,142 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Escolar Familiar</title>
-    <style>
-        :root { --primary: #9c27b0; --bg: #fdf6ff; --text: #333333; }
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 500px; }
-        .header { background: linear-gradient(135deg, #ab47bc, #7b1fa2); color: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3); margin-bottom: 15px; }
-        .header h1 { margin: 0 0 15px 0; font-size: 1.4rem; }
-        .student-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .btn-student { background: rgba(255, 255, 255, 0.3); border: 2px solid transparent; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        .btn-student.active { background: white; color: var(--primary); }
-        .section-tag { display: inline-block; background: rgba(255, 255, 255, 0.2); padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; cursor: pointer; }
-        
-        .print-btn-container { display: flex; justify-content: center; margin-bottom: 12px; }
-        .btn-print { background: #7b1fa2; color: white; border: none; padding: 10px 18px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; cursor: pointer; box-shadow: 0 2px 8px rgba(123, 31, 162, 0.3); display: flex; align-items: center; gap: 6px; }
-
-        .days-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 15px; }
-        .btn-day { background: white; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 15px; font-size: 0.9rem; color: #666; cursor: pointer; white-space: nowrap; }
-        .btn-day.active { background: #ba68c8; color: white; border-color: #ba68c8; font-weight: bold; }
-        .schedule-list { display: flex; flex-direction: column; gap: 12px; }
-        .subject-card { background: white; border-radius: 15px; padding: 15px; border-left: 6px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .subject-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .subject-title { font-size: 1.1rem; font-weight: bold; margin: 0 0 4px 0; }
-        .subject-time { font-size: 0.85rem; color: #666; font-weight: bold; }
-        .subject-teacher { font-size: 0.85rem; color: #888; margin-bottom: 8px; }
-        .actions { display: flex; gap: 8px; }
-        .btn-action { background: none; border: none; font-size: 1rem; cursor: pointer; opacity: 0.7; }
-        
-        .eval-section { margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; }
-        .eval-title { font-size: 0.8rem; font-weight: bold; color: #666; margin-bottom: 6px; }
-        .eval-item { background: #f3e5f5; border-left: 3px solid #ab47bc; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .btn-add-eval { background: #f0f0f0; color: var(--primary); border: 1px dashed var(--primary); padding: 8px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-top: 8px; width: 100%; }
-        
-        .btn-fab { position: fixed; bottom: 25px; right: 25px; width: 56px; height: 56px; background: #ba68c8; color: white; border-radius: 50%; border: none; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 0.85rem; margin-bottom: 4px; color: #555; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-save { background: #ba68c8; color: white; border: none; padding: 10px; border-radius: 10px; flex: 1; font-weight: bold; cursor: pointer; }
-        .btn-cancel { background: #eee; color: #333; border: none; padding: 10px; border-radius: 10px; flex: 1; cursor: pointer; }
-        .empty-msg { text-align: center; color: #aaa; margin-top: 30px; font-size: 0.95rem; }
-
-        #printArea { display: none; }
-
-        /* ESTILOS DE IMPRESIÓN MATRICIAL EN HORIZONTAL */
-        @media print {
-            @page { size: landscape; margin: 6mm; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body { background: white; padding: 0; color: black; }
-            .container, .btn-fab, .modal { display: none !important; }
-            #printArea { display: block !important; width: 100%; }
-            .print-header { text-align: center; margin-bottom: 8px; border-bottom: 3px solid #7b1fa2; padding-bottom: 4px; }
-            .print-header h2 { margin: 0; color: #7b1fa2; font-size: 1.4rem; }
-            .print-header p { margin: 2px 0 0 0; font-weight: bold; font-size: 0.95rem; color: #444; }
-            
-            .grid-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.78rem; }
-            .grid-table th, .grid-table td { border: 1px solid #b2ebf2; padding: 5px 3px; text-align: center; vertical-align: middle; word-wrap: break-word; }
-            .grid-table th { background: #7b1fa2 !important; color: white !important; font-weight: bold; font-size: 0.85rem; }
-            .grid-table th.time-col { background: #4a148c !important; width: 15%; }
-            
-            .subject-cell { border-radius: 6px; padding: 5px 3px; border: 1px solid rgba(0,0,0,0.08); }
-            .sub-name { font-weight: bold; font-size: 0.82rem; color: #222; display: block; margin-bottom: 2px; }
-            .sub-prof { font-size: 0.65rem; color: #555; font-style: italic; display: block; line-height: 1.1; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Escolar Familiar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #fcf8ff; color: #333; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+    .container { width: 100%; max-width: 600px; }
+    .header { background: linear-gradient(135deg, #7b2cbf, #9d4edd); color: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 4px 15px rgba(123, 44, 191, 0.3); margin-bottom: 15px; }
+    .header h1 { font-size: 1.5rem; margin-bottom: 15px; }
+    .tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+    .tab-btn { background: rgba(255, 255, 255, 0.25); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: white; color: #7b2cbf; }
+    .sub-tag { display: inline-block; background: rgba(255, 255, 255, 0.2); padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
+    .print-btn { width: 100%; background: #7b2cbf; color: white; border: none; padding: 12px; border-radius: 15px; font-weight: bold; cursor: pointer; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .days-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 15px; }
+    .day-btn { background: white; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; color: #666; }
+    .day-btn.active { background: #9d4edd; color: white; border-color: #9d4edd; }
+    .schedule-list { display: flex; flex-direction: column; gap: 10px; }
+    .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #7b2cbf; }
+    .card-info h3 { font-size: 1.1rem; color: #2b2b2b; }
+    .card-info p { font-size: 0.85rem; color: #777; margin-top: 3px; }
+    .floating-add { position: fixed; bottom: 20px; right: 20px; background: #9d4edd; color: white; border: none; width: 55px; height: 55px; border-radius: 50%; font-size: 1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; }
+  </style>
 </head>
 <body>
-
-<div class="container">
+  <div class="container">
     <div class="header">
-        <h1>Control Escolar Familiar ✨</h1>
-        <div class="student-selector">
-            <button class="btn-student active" id="btnHija1" onclick="switchStudent('hija1')">👧 Fransheska</button>
-            <button class="btn-student" id="btnHija2" onclick="switchStudent('hija2')">👧 Francelys</button>
-        </div>
-        <div class="section-tag" onclick="editSection()" id="sectionLabel">3er Año A ✏️</div>
+      <h1>Control Escolar Familiar ✨</h1>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchStudent('Fransheska')">👧 Fransheska</button>
+        <button class="tab-btn" onclick="switchStudent('Francelys')">👧 Francelys</button>
+      </div>
+      <div class="sub-tag" id="gradeTag">3er Año A ✏️</div>
     </div>
 
-    <div class="print-btn-container">
-        <button class="btn-print" onclick="printSchedule()">🖨️ Imprimir Horario General (Horizontal)</button>
-    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ Imprimir Horario General</button>
 
     <div class="days-bar">
-        <button class="btn-day active" id="btn-Lunes" onclick="setDay('Lunes')">Lunes</button>
-        <button class="btn-day" id="btn-Martes" onclick="setDay('Martes')">Martes</button>
-        <button class="btn-day" id="btn-Miércoles" onclick="setDay('Miércoles')">Miércoles</button>
-        <button class="btn-day" id="btn-Jueves" onclick="setDay('Jueves')">Jueves</button>
-        <button class="btn-day" id="btn-Viernes" onclick="setDay('Viernes')">Viernes</button>
+      <button class="day-btn active" onclick="switchDay('Lunes', this)">Lunes</button>
+      <button class="day-btn" onclick="switchDay('Martes', this)">Martes</button>
+      <button class="day-btn" onclick="switchDay('Miércoles', this)">Miércoles</button>
+      <button class="day-btn" onclick="switchDay('Jueves', this)">Jueves</button>
+      <button class="day-btn" onclick="switchDay('Viernes', this)">Viernes</button>
     </div>
 
-    <div class="schedule-list" id="scheduleList"></div>
-</div>
-
-<div id="printArea"></div>
-
-<button class="btn-fab" onclick="openSubjectModal()">+</button>
-
-<!-- MODAL MATERIA -->
-<div class="modal" id="subjectModal">
-    <div class="modal-content">
-        <h3>Materia</h3>
-        <input type="hidden" id="subjId">
-        <div class="form-group"><label>Nombre de la Materia:</label><input type="text" id="subjName"></div>
-        <div class="form-group"><label>Profesor(a):</label><input type="text" id="subjTeacher"></div>
-        <div class="form-group">
-            <label>Día:</label>
-            <select id="subjDay">
-                <option value="Lunes">Lunes</option>
-                <option value="Martes">Martes</option>
-                <option value="Miércoles">Miércoles</option>
-                <option value="Jueves">Jueves</option>
-                <option value="Viernes">Viernes</option>
-            </select>
-        </div>
-        <div class="form-group"><label>Hora Inicio:</label><input type="text" id="subjStart" placeholder="Ej: 7:00 a.m."></div>
-        <div class="form-group"><label>Hora Fin:</label><input type="text" id="subjEnd" placeholder="Ej: 8:20 a.m."></div>
-        <div class="form-group"><label>Color:</label><input type="color" id="subjColor" value="#f3e5f5"></div>
-        <div class="modal-buttons">
-            <button class="btn-save" onclick="saveSubject()">Guardar</button>
-            <button class="btn-cancel" onclick="closeModal('subjectModal')">Cancelar</button>
-        </div>
+    <div class="schedule-list" id="scheduleContainer">
+      <!-- Se carga dinámicamente -->
     </div>
-</div>
+  </div>
 
-<!-- MODAL EVALUACIÓN -->
-<div class="modal" id="evalModal">
-    <div class="modal-content">
-        <h3>Plan de Evaluación / Examen</h3>
-        <input type="hidden" id="evalSubjId">
-        <div class="form-group"><label>Descripción / Tema:</label><input type="text" id="evalTitle" placeholder="Ej: Examen Tema 1..."></div>
-        <div class="form-group"><label>Fecha de la Evaluación:</label><input type="date" id="evalDate"></div>
-        <div class="form-group">
-            <label>Alarma de Recordatorio:</label>
-            <select id="evalAlertDays">
-                <option value="1">1 día antes</option>
-                <option value="2">2 días antes</option>
-                <option value="3">3 días antes</option>
-                <option value="7">1 semana antes</option>
-            </select>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-save" onclick="saveEvaluation()">Guardar Evaluación</button>
-            <button class="btn-cancel" onclick="closeModal('evalModal')">Cancelar</button>
-        </div>
-    </div>
-</div>
+  <button class="floating-add" onclick="addSubject()">+</button>
 
-<script>
-    var currentDay = 'Lunes';
-    var currentStudent = 'hija1';
-
-    var db = {
-        hija1: {
-            section: '3er Año A',
-            subjects: [
-                { id: 101, name: 'Castellano', teacher: 'Ruiz Jimenez', day: 'Lunes', start: '7:00 a.m.', end: '8:20 a.m.', color: '#f3e5f5', evaluations: [] },
-                { id: 102, name: 'Inglés', teacher: 'Areyan', day: 'Lunes', start: '8:30 a.m.', end: '9:50 a.m.', color: '#e8eaf6', evaluations: [] },
-                { id: 103, name: 'GHC', teacher: 'Hernández Palacios', day: 'Lunes', start: '9:50 a.m.', end: '11:10 a.m.', color: '#e0f2f1', evaluations: [] },
-                { id: 104, name: 'Grupo', teacher: '-', day: 'Lunes', start: '11:50 a.m.', end: '12:30 p.m.', color: '#fff3e0', evaluations: [] },
-                { id: 105, name: 'Biología', teacher: 'Alfonzo de Cordero Lisbeth', day: 'Martes', start: '7:00 a.m.', end: '8:20 a.m.', color: '#e8f5e9', evaluations: [] },
-                { id: 106, name: 'Matemática', teacher: 'Bastardo Márquez Franklin', day: 'Martes', start: '8:30 a.m.', end: '9:50 a.m.', color: '#ffebee', evaluations: [] },
-                { id: 107, name: 'Química', teacher: 'Luces Parra Eva', day: 'Martes', start: '9:50 a.m.', end: '11:10 a.m.', color: '#e0f7fa', evaluations: [] },
-                { id: 108, name: 'Educación Física', teacher: 'Mudarra Tillero', day: 'Martes', start: '11:50 a.m.', end: '1:10 p.m.', color: '#f5f5f5', evaluations: [] },
-                { id: 109, name: 'Física', teacher: 'Mota Marcano Edgar David', day: 'Miércoles', start: '7:00 a.m.', end: '8:20 a.m.', color: '#fce4ec', evaluations: [] },
-                { id: 110, name: 'Castellano', teacher: 'Ruiz Jimenez', day: 'Miércoles', start: '8:30 a.m.', end: '9:50 a.m.', color: '#f3e5f5', evaluations: [] },
-                { id: 111, name: 'GHC', teacher: 'Hernández Palacios', day: 'Miércoles', start: '9:50 a.m.', end: '11:10 a.m.', color: '#e0f2f1', evaluations: [] },
-                { id: 112, name: 'Inglés', teacher: 'Areyan Urquiola', day: 'Jueves', start: '7:00 a.m.', end: '8:20 a.m.', color: '#e8eaf6', evaluations: [] },
-                { id: 113, name: 'Biología', teacher: 'Alfonzo de Cordero Lisbeth', day: 'Jueves', start: '8:30 a.m.', end: '9:50 a.m.', color: '#e8f5e9', evaluations: [] },
-                { id: 114, name: 'Orientación', teacher: 'Bastardo Márquez', day: 'Jueves', start: '9:50 a.m.', end: '11:10 a.m.', color: '#efebe9', evaluations: [] },
-                { id: 115, name: 'Educación Física', teacher: 'Mudarra Tillero', day: 'Jueves', start: '11:50 a.m.', end: '1:10 p.m.', color: '#f5f5f5', evaluations: [] },
-                { id: 116, name: 'Inglés', teacher: 'Areyan Urquiola', day: 'Viernes', start: '7:00 a.m.', end: '8:20 a.m.', color: '#e8eaf6', evaluations: [] },
-                { id: 117, name: 'Química', teacher: 'Luces Parra Eva', day: 'Viernes', start: '8:30 a.m.', end: '9:50 a.m.', color: '#e0f7fa', evaluations: [] },
-                { id: 118, name: 'Física', teacher: 'Mota Marcano Edgar David', day: 'Viernes', start: '9:50 a.m.', end: '11:10 a.m.', color: '#fce4ec', evaluations: [] },
-                { id: 119, name: 'Educación Física', teacher: 'Mudarra Tillero', day: 'Viernes', start: '11:50 a.m.', end: '1:10 p.m.', color: '#f5f5f5', evaluations: [] },
-                { id: 120, name: 'Matemática', teacher: 'Bastardo Márquez Franklin', day: 'Viernes', start: '2:00 p.m.', end: '3:15 p.m.', color: '#ffebee', evaluations: [] },
-                { id: 121, name: 'GHC', teacher: 'Hernández Palacios', day: 'Viernes', start: '3:15 p.m.', end: '4:30 p.m.', color: '#e0f2f1', evaluations: [] }
-            ]
-        },
-        hija2: { 
-            section: '2do Año A', 
-            subjects: [
-                { id: 201, name: 'Educación Física', teacher: 'Mota Martínez', day: 'Lunes', start: '7:00 a.m.', end: '8:20 a.m.', color: '#f5f5f5', evaluations: [] },
-                { id: 202, name: 'Cs. Naturales', teacher: 'Brito Maza Francely', day: 'Lunes', start: '8:30 a.m.', end: '9:50 a.m.', color: '#e8f5e9', evaluations: [] },
-                { id: 203, name: 'Inglés', teacher: 'Navarro Carrizales Thaís', day: 'Lunes', start: '9:50 a.m.', end: '11:10 a.m.', color: '#e8eaf6', evaluations: [] },
-                { id: 204, name: 'Grupo', teacher: '-', day: 'Lunes', start: '11:50 a.m.', end: '12:30 p.m.', color: '#fff3e0', evaluations: [] },
-                { id: 205, name: 'GHC', teacher: 'Sánchez Cabello Katherine', day: 'Lunes', start: '3:15 p.m.', end: '4:30 p.m.', color: '#e0f2f1', evaluations: [] },
-                { id: 206, name: 'Matemática', teacher: 'Rojas Barreto Aide', day: 'Lunes', start: '4:30 p.m.', end: '5:45 p.m.', color: '#ffebee', evaluations: [] },
-                { id: 207, name: 'Castellano', teacher: 'Medina Ninoska Virginia', day: 'Martes', start: '7:00 a.m.', end: '8:20 a.m.', color: '#f3e5f5', evaluations: [] },
-                { id: 208, name: 'Cs. Naturales', teacher: 'Brito Maza Francely', day: 'Martes', start: '8:30 a.m.', end: '9:50 a.m.', color: '#e8f5e9', evaluations: [] },
-                { id: 209, name: 'Arte y Patrimonio', teacher: 'Salazar de Barreto', day: 'Martes', start: '9:50 a.m.', end: '10:30 a.m.', color: '#fce4ec', evaluations: [] },
-                { id: 210, name: 'GHC', teacher: 'Sánchez Cabello Katherine', day: 'Martes', start: '10:30 a.m.', end: '11:10 a.m.', color: '#e0f2f1', evaluations: [] },
-                { id: 211, name: 'Educación Física', teacher: 'Mota Martínez', day: 'Miércoles', start: '8:30 a.m.', end: '9:50 a.m.', color: '#f5f5f5', evaluations: [] },
-                { id: 212, name: 'Matemática', teacher: 'Rojas Barreto Aide', day: 'Miércoles', start: '9:50 a.m.', end: '11:10 a.m.', color: '#ffebee', evaluations: [] },
-                { id: 213, name: 'Grupo', teacher: '-', day: 'Miércoles', start: '11:50 a.m.', end: '12:30 p.m.', color: '#fff3e0', evaluations: [] },
-                { id: 214, name: 'Educación Física', teacher: 'Mota Martínez', day: 'Jueves', start: '7:00 a.m.', end: '8:20 a.m.', color: '#f5f5f5', evaluations: [] },
-                { id: 215, name: 'Cs. Naturales', teacher: 'Brito Maza Francely', day: 'Jueves', start: '8:30 a.m.', end: '9:50 a.m.', color: '#e8f5e9', evaluations: [] },
-                { id: 216, name: 'Castellano', teacher: 'Medina Ninoska Virginia', day: 'Jueves', start: '9:50 a.m.', end: '10:30 a.m.', color: '#f3e5f5', evaluations: [] },
-                { id: 217, name: 'Inglés', teacher: 'Navarro Carrizales Thaís', day: 'Jueves', start: '10:30 a.m.', end: '11:10 a.m.', color: '#e8eaf6', evaluations: [] },
-                { id: 218, name: 'Arte y Patrimonio', teacher: 'Salazar de Barreto', day: 'Viernes', start: '7:00 a.m.', end: '8:20 a.m.', color: '#fce4ec', evaluations: [] },
-                { id: 219, name: 'Orientación', teacher: 'Sánchez Cabello Katherine', day: 'Viernes', start: '8:30 a.m.', end: '9:50 a.m.', color: '#efebe9', evaluations: [] },
-                { id: 220, name: 'GHC', teacher: 'Sánchez Cabello Katherine', day: 'Viernes', start: '9:50 a.m.', end: '10:30 a.m.', color: '#e0f2f1', evaluations: [] },
-                { id: 221, name: 'Inglés', teacher: 'Navarro Carrizales Thaís', day: 'Viernes', start: '10:30 a.m.', end: '11:10 a.m.', color: '#e8eaf6', evaluations: [] }
-            ]
+  <script>
+    const data = {
+      Fransheska: {
+        grado: "3er Año A ✏️",
+        horarios: {
+          Lunes: [
+            { materia: "Matemáticas", hora: "07:00 AM - 08:30 AM" },
+            { materia: "Castellano", hora: "08:30 AM - 10:00 AM" }
+          ],
+          Martes: [{ materia: "Inglés", hora: "07:00 AM - 08:30 AM" }],
+          Miércoles: [{ materia: "Física", hora: "07:00 AM - 08:30 AM" }],
+          Jueves: [{ materia: "Química", hora: "07:00 AM - 08:30 AM" }],
+          Viernes: [{ materia: "Educación Física", hora: "07:00 AM - 08:30 AM" }]
         }
+      },
+      Francelys: {
+        grado: "1er Año B ✏️",
+        horarios: {
+          Lunes: [
+            { materia: "Ciencias Naturales", hora: "07:00 AM - 08:30 AM" }
+          ],
+          Martes: [{ materia: "Matemáticas", hora: "07:00 AM - 08:30 AM" }],
+          Miércoles: [{ materia: "Arte y Cultura", hora: "07:00 AM - 08:30 AM" }],
+          Jueves: [{ materia: "Geografía", hora: "07:00 AM - 08:30 AM" }],
+          Viernes: [{ materia: "Castellano", hora: "07:00 AM - 08:30 AM" }]
+        }
+      }
     };
 
-    function switchStudent(s) {
-        currentStudent = s;
-        document.getElementById('btnHija1').className = 'btn-student' + (s === 'hija1' ? ' active' : '');
-        document.getElementById('btnHija2').className = 'btn-student' + (s === 'hija2' ? ' active' : '');
-        document.getElementById('sectionLabel').innerText = db[currentStudent].section + ' ✏️';
-        render();
-    }
-
-    function setDay(d) {
-        currentDay = d;
-        var daysList = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-        for(var i=0; i<daysList.length; i++) {
-            var b = document.getElementById('btn-' + daysList[i]);
-            if(b) b.className = 'btn-day' + (daysList[i] === d ? ' active' : '');
-        }
-        render();
-    }
-
-    function editSection() {
-        var n = prompt("Modificar sección:", db[currentStudent].section);
-        if(n) { db[currentStudent].section = n; document.getElementById('sectionLabel').innerText = n + ' ✏️'; }
-    }
+    let currentStudent = 'Fransheska';
+    let currentDay = 'Lunes';
 
     function render() {
-        var list = document.getElementById('scheduleList');
-        if(!list) return;
-        var subs = db[currentStudent].subjects;
-        var html = '';
-        var count = 0;
+      document.getElementById('gradeTag').innerText = data[currentStudent].grado;
+      const container = document.getElementById('scheduleContainer');
+      container.innerHTML = '';
+      
+      const items = data[currentStudent].horarios[currentDay] || [];
+      if (items.length === 0) {
+        container.innerHTML = '<div class="card"><div class="card-info"><h3>Sin materias registradas</h3></div></div>';
+        return;
+      }
 
-        for(var i=0; i<subs.length; i++) {
-            var s = subs[i];
-            if(s.day === currentDay) {
-                count++;
-                var evals = '';
-                if(s.evaluations && s.evaluations.length > 0) {
-                    evals += '<div class="eval-section"><div class="eval-title">PLAN DE EVALUACIÓN:</div>';
-                    for(var k=0; k<s.evaluations.length; k++) {
-                        var e = s.evaluations[k];
-                        evals += '<div class="eval-item"><div><strong>📌 ' + e.title + '</strong><br><small>📅 ' + e.date + ' (' + e.alertDays + 'd antes)</small></div><button onclick="delEval(' + s.id + ',' + k + ')" style="border:none;background:none;color:red;font-weight:bold;">✕</button></div>';
-                    }
-                    evals += '</div>';
-                }
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-info">
+            <h3>${item.materia}</h3>
+            <p>⏰ ${item.hora}</p>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
 
-                var teacher = (s.teacher && s.teacher !== '-') ? '<div class="subject-teacher">👨‍🏫 ' + s.teacher + '</div>' : '';
+    function switchStudent(student) {
+      currentStudent = student;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.includes(student));
+      });
+      render();
+    }
 
-                html += '<div class="subject-card" style="border-left-color:#ab47bc">' +
-                    '<div class="subject-header"><div><div class="subject-title">' + s.name + '</div>' +
-                    '<div class="subject-time">⏰ ' + s.start + ' - ' + s.end + '</div></div>' +
-                    '<div class="actions"><button class="btn-ac
+    function switchDay(day, btn) {
+      currentDay = day;
+      document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    }
+
+    function addSubject() {
+      const materia = prompt("Nombre de la materia:");
+      const hora = prompt("Horario (ej: 07:00 AM - 08:30 AM):");
+      if (materia && hora) {
+        if (!data[currentStudent].horarios[currentDay]) {
+          data[currentStudent].horarios[currentDay] = [];
+        }
+        data[currentStudent].horarios[currentDay].push({ materia, hora });
+        render();
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
